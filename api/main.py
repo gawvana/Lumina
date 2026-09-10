@@ -6,14 +6,18 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.routers import admin, auth, parent, shared, student, teacher
+from api.routers import admin, auth, bot_webhook, parent, shared, student, teacher
 from db.session import init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initializes database schema on startup."""
-    await init_db()
+    try:
+        await init_db()
+    except Exception as exc:
+        # Prevent serverless crash if external database has a cold startup
+        print(f"Warning: init_db encountered an issue: {exc}")
     yield
 
 
@@ -41,6 +45,7 @@ app.include_router(admin.router, prefix=api_v1_prefix)
 app.include_router(teacher.router, prefix=api_v1_prefix)
 app.include_router(student.router, prefix=api_v1_prefix)
 app.include_router(parent.router, prefix=api_v1_prefix)
+app.include_router(bot_webhook.router, prefix=api_v1_prefix)
 
 
 from fastapi.staticfiles import StaticFiles

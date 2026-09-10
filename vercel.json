@@ -17,10 +17,27 @@
       ]
     }
   ],
+  "services": {
+    "lumina-frontend": {
+      "root": "webapp"
+    },
+    "lumina-backend": {
+      "root": ".",
+      "entrypoint": "api/index.py"
+    }
+  },
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "lumina-backend"
+      }
+    },
+    {
       "source": "/(.*)",
-      "destination": "/$1"
+      "destination": {
+        "service": "lumina-frontend"
+      }
     }
   ]
 }
