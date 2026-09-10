@@ -1,0 +1,153 @@
+{
+  "common": {
+    "app_name": "Lumina",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "back": "Назад",
+    "close": "Закрыть",
+    "search": "Поиск...",
+    "loading": "Загрузка...",
+    "empty": "Нет данных для отображения",
+    "error": "Произошла ошибка",
+    "success": "Успешно сохранено",
+    "confirm": "Подтвердить",
+    "status": "Статус",
+    "actions": "Действия",
+    "date": "Дата",
+    "comment": "Комментарий",
+    "optional": "Необязательно",
+    "total": "Всего",
+    "today": "Сегодня",
+    "tomorrow": "Завтра",
+    "all": "Все",
+    "details": "Подробнее"
+  },
+  "roles": {
+    "admin": "Администратор",
+    "teacher": "Учитель",
+    "student": "Ученик",
+    "parent": "Родитель"
+  },
+  "nav": {
+    "home": "Главная",
+    "grades": "Оценки",
+    "homework": "Домашка",
+    "schedule": "Расписание",
+    "progress": "Прогресс",
+    "profile": "Профиль",
+    "dashboard": "Дашборд",
+    "classes": "Классы",
+    "journal": "Журнал",
+    "overview": "Обзор",
+    "school": "Школа",
+    "people": "Люди",
+    "academics": "Учебный план",
+    "settings": "Настройки",
+    "audit": "Аудит"
+  },
+  "grading": {
+    "title": "Оценки",
+    "average": "Средний балл",
+    "history": "История оценок",
+    "grade_value": "Оценка",
+    "grade_type": "Тип работы",
+    "award_grade": "Поставить оценку",
+    "edit_grade": "Изменить оценку",
+    "retake": "Исправление (Второй шанс)",
+    "excused": "Освобождён",
+    "types": {
+      "oral": "Ответ у доски",
+      "classwork": "Работа на уроке",
+      "homework": "Домашняя работа",
+      "quiz": "Самостоятельная",
+      "test": "Контрольная работа",
+      "exam": "Экзамен"
+    }
+  },
+  "attendance": {
+    "title": "Посещаемость",
+    "present": "Был",
+    "absent": "Н",
+    "late": "Опоздал",
+    "excused": "Уважительная причина",
+    "absence_note": "Цифровая записка об отсутствии",
+    "submit_note": "Отправить записку",
+    "reason": "Причина отсутствия",
+    "date_from": "С даты",
+    "date_to": "По дату",
+    "note_status": {
+      "pending": "На рассмотрении",
+      "approved": "Принята",
+      "rejected": "Отклонена"
+    }
+  },
+  "homework": {
+    "title": "Домашние задания",
+    "create": "Задать домашнее задание",
+    "due_date": "Срок сдачи",
+    "description": "Описание задания",
+    "status": {
+      "todo": "К выполнению",
+      "done": "Выполнено",
+      "overdue": "Просрочено"
+    },
+    "filter": {
+      "all": "Все",
+      "today": "На сегодня",
+      "tomorrow": "На завтра",
+      "this_week": "На неделе",
+      "overdue": "Просрочено",
+      "done": "Сдано"
+    }
+  },
+  "schedule": {
+    "title": "Расписание уроков",
+    "period": "Урок",
+    "room": "Кабинет",
+    "teacher": "Учитель",
+    "subject": "Предмет",
+    "statuses": {
+      "scheduled": "По расписанию",
+      "cancelled": "Отменён",
+      "replaced": "Замена"
+    }
+  },
+  "invites": {
+    "title": "Приглашения",
+    "generate": "Создать приглашение",
+    "target_role": "Роль приглашаемого",
+    "expires_at": "Действует до",
+    "copy_link": "Скопировать ссылку",
+    "link_copied": "Ссылка скопирована в буфер",
+    "expired": "Срок действия приглашения истёк",
+    "already_used": "Это приглашение уже было использовано",
+    "invalid": "Недействительный токен приглашения"
+  },
+  "settings": {
+    "title": "Настройки",
+    "language": "Язык интерфейса",
+    "theme": "Тема оформления",
+    "theme_dark": "Тёмная",
+    "theme_light": "Светлая",
+    "quiet_hours": "Тихий режим (без звуков ночью)",
+    "feature_flags": "Функции школы (Feature Flags)"
+  },
+  "errors": {
+    "unauthorized": "Требуется авторизация",
+    "forbidden": "Недостаточно прав для выполнения операции",
+    "not_found": "Запрошенный ресурс не найден",
+    "access_denied": "Доступ запрещен: вы не можете просматривать данные других учащихся",
+    "invalid_telegram_data": "Недействительные данные авторизации Telegram",
+    "school_mismatch": "Обнаружена попытка межшкольного доступа",
+    "validation_error": "Ошибка проверки введённых данных"
+  },
+  "notifications": {
+    "new_grade": "Новая оценка: {subject} — {grade} ({type})",
+    "grade_updated": "Оценка обновлена: {subject} — {grade}",
+    "new_homework": "Новое ДЗ по предмету {subject} на {date}",
+    "absence_recorded": "Отмечен пропуск урока {subject} ({status})",
+    "absence_note_approved": "Записка об отсутствии с {from} по {to} подтверждена учителем"
+  }
+}

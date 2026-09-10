@@ -1,0 +1,153 @@
+{
+  "common": {
+    "app_name": "Lumina",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "back": "Orqaga",
+    "close": "Yopish",
+    "search": "Qidirish...",
+    "loading": "Yuklanmoqda...",
+    "empty": "Ko'rsatish uchun ma'lumot yo'q",
+    "error": "Xatolik yuz berdi",
+    "success": "Muvaffaqiyatli saqlandi",
+    "confirm": "Tasdiqlash",
+    "status": "Holat",
+    "actions": "Amallar",
+    "date": "Sana",
+    "comment": "Izoh",
+    "optional": "Ixtiyoriy",
+    "total": "Jami",
+    "today": "Bugun",
+    "tomorrow": "Ertaga",
+    "all": "Barchasi",
+    "details": "Batafsil"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "teacher": "O'qituvchi",
+    "student": "O'quvchi",
+    "parent": "Ota-ona"
+  },
+  "nav": {
+    "home": "Asosiy",
+    "grades": "Baholar",
+    "homework": "Vazifalar",
+    "schedule": "Dars jadvali",
+    "progress": "O'zlashtirish",
+    "profile": "Profil",
+    "dashboard": "Boshqaruv",
+    "classes": "Sinflar",
+    "journal": "Jurnal",
+    "overview": "Umumiy ko'rinish",
+    "school": "Maktab",
+    "people": "Foydalanuvchilar",
+    "academics": "O'quv rejasi",
+    "settings": "Sozlamalar",
+    "audit": "Audit jurnali"
+  },
+  "grading": {
+    "title": "Baholar",
+    "average": "O'rtacha ball",
+    "history": "Baholar tarixi",
+    "grade_value": "Baho",
+    "grade_type": "Ish turi",
+    "award_grade": "Baho qo'yish",
+    "edit_grade": "Bahoni o'zgartirish",
+    "retake": "Qayta topshirish (Ikkinchi imkoniyat)",
+    "excused": "Sababli ozod qilingan",
+    "types": {
+      "oral": "Doskada javob",
+      "classwork": "Darsdagi ish",
+      "homework": "Uy vazifasi",
+      "quiz": "Mustaqil ish",
+      "test": "Nazorat ishi",
+      "exam": "Imtihon"
+    }
+  },
+  "attendance": {
+    "title": "Davomat",
+    "present": "Bor",
+    "absent": "Yo'q",
+    "late": "Kechikdi",
+    "excused": "Sababli",
+    "absence_note": "Raqamli tushuntirish xati",
+    "submit_note": "Tushuntirish xatini yuborish",
+    "reason": "Qoldirish sababi",
+    "date_from": "Boshlanish sanasi",
+    "date_to": "Tugash sanasi",
+    "note_status": {
+      "pending": "Kutilmoqda",
+      "approved": "Qabul qilindi",
+      "rejected": "Rad etildi"
+    }
+  },
+  "homework": {
+    "title": "Uy vazifalari",
+    "create": "Uy vazifasini berish",
+    "due_date": "Topshirish muddati",
+    "description": "Vazifa tavsifi",
+    "status": {
+      "todo": "Bajarilishi kerak",
+      "done": "Bajarildi",
+      "overdue": "Muddati o'tdi"
+    },
+    "filter": {
+      "all": "Barchasi",
+      "today": "Bugungi",
+      "tomorrow": "Ertangi",
+      "this_week": "Shu hafta",
+      "overdue": "Muddati o'tgan",
+      "done": "Topshirilgan"
+    }
+  },
+  "schedule": {
+    "title": "Dars jadvali",
+    "period": "Dars",
+    "room": "Xona",
+    "teacher": "O'qituvchi",
+    "subject": "Fan",
+    "statuses": {
+      "scheduled": "Jadval bo'yicha",
+      "cancelled": "Bekor qilindi",
+      "replaced": "O'rinbosar dars"
+    }
+  },
+  "invites": {
+    "title": "Taklifnomalar",
+    "generate": "Taklifnoma yaratish",
+    "target_role": "Foydalanuvchi roli",
+    "expires_at": "Amal qilish muddati",
+    "copy_link": "Havolani nusxalash",
+    "link_copied": "Havola buferga nusxalandi",
+    "expired": "Taklifnoma muddati tugagan",
+    "already_used": "Bu taklifnomadan allaqachon foydalanilgan",
+    "invalid": "Yaroqsiz taklifnoma kodi"
+  },
+  "settings": {
+    "title": "Sozlamalar",
+    "language": "Tizim tili",
+    "theme": "Mavzu",
+    "theme_dark": "Qorong'i",
+    "theme_light": "Yorug'",
+    "quiet_hours": "Tungi tinch rejim",
+    "feature_flags": "Maktab imkoniyatlari (Feature Flags)"
+  },
+  "errors": {
+    "unauthorized": "Tizimga kirish talab etiladi",
+    "forbidden": "Ushbu amalni bajarish uchun ruxsat yetarli emas",
+    "not_found": "So'ralgan ma'lumot topilmadi",
+    "access_denied": "Kirish taqiqlangan: boshqa o'quvchining ma'lumotlarini ko'ra olmaysiz",
+    "invalid_telegram_data": "Telegram autentifikatsiya ma'lumotlari yaroqsiz",
+    "school_mismatch": "Boshqa maktab ma'lumotlariga kirish aniqlandi",
+    "validation_error": "Kiritilgan ma'lumotlarda xatolik bor"
+  },
+  "notifications": {
+    "new_grade": "Yangi baho: {subject} — {grade} ({type})",
+    "grade_updated": "Baho yangilandi: {subject} — {grade}",
+    "new_homework": "{subject} fanidan {date} sanasiga yangi vazifa",
+    "absence_recorded": "{subject} darsida qatnashmadi ({status})",
+    "absence_note_approved": "{from} dan {to} gacha bo'lgan tushuntirish xati o'qituvchi tomonidan tasdiqlandi"
+  }
+}
