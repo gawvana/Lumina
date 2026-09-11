@@ -185,7 +185,7 @@ async def authenticate_or_register_user(
                     await db.flush()
 
                     student_prof = Student(
-                        user_id=user.id,
+                        id=user.id,
                         class_id=default_class.id if default_class else None,
                     )
                     db.add(student_prof)
