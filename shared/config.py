@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # Telegram Bot configurations
     TELEGRAM_BOT_TOKEN: str = ""
-    TELEGRAM_BOT_USERNAME: str = "LuminaSchoolBot"
+    TELEGRAM_BOT_USERNAME: str = "LuminzBot"
     TELEGRAM_WEBHOOK_SECRET: str = ""
 
     # WebApp URL
