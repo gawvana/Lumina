@@ -77,6 +77,13 @@ class ApiClient {
     return this.request('/auth/me');
   }
 
+  async redeemInvite(inviteToken) {
+    return this.request('/auth/redeem-invite', {
+      method: 'POST',
+      body: JSON.stringify({ invite_token: inviteToken }),
+    });
+  }
+
   // ==================== Student Endpoints ====================
   async getStudentDashboard() {
     return this.request('/student/dashboard');

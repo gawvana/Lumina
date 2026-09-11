@@ -219,6 +219,22 @@ export const StudentView = {
 
         <div class="card">
           <div class="card-title">
+            <i data-lucide="ticket" aria-hidden="true"></i>
+            <span>${escapeHtml(i18n.t('student.invite_title', 'Код приглашения в класс'))}</span>
+          </div>
+          <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px;">
+            ${escapeHtml(i18n.t('student.invite_desc', 'Если учитель выдал вам персональный код, введите его для привязки к вашему классу:'))}
+          </p>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="manualInviteInput" class="input-field" placeholder="inv_..." style="flex:1;">
+            <button class="btn btn-primary" id="manualInviteSubmitBtn" style="padding:8px 16px;">
+              ${escapeHtml(i18n.t('common.confirm', 'Применить'))}
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
             <i data-lucide="settings" aria-hidden="true"></i>
             <span>${escapeHtml(i18n.t('common.settings', 'Настройки'))}</span>
           </div>
@@ -232,6 +248,19 @@ export const StudentView = {
           </div>
         </div>
       `;
+
+      document.getElementById('manualInviteSubmitBtn')?.addEventListener('click', async () => {
+        const input = document.getElementById('manualInviteInput');
+        const token = input?.value.trim();
+        if (!token) return;
+        try {
+          await api.redeemInvite(token);
+          showToast('Приглашение успешно активировано!', 'success');
+          StudentView.renderProfile(container);
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      });
 
       document.getElementById('profileLangBtn')?.addEventListener('click', async () => {
         triggerHaptic('impact', 'light');

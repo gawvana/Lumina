@@ -45,23 +45,29 @@ class LuminaApp {
       this.renderCurrentView();
     });
 
-    // 4. Setup Dev Role Switcher (strictly local development only)
+    // 4. Setup Role Switcher
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const devSwitcherBar = document.getElementById('devSwitcherBar');
-    if (!isLocalhost && devSwitcherBar) {
-      devSwitcherBar.style.display = 'none';
-    } else if (devSwitcherBar) {
-      devSwitcherBar.style.display = 'flex';
-      const roleSwitcher = document.getElementById('roleSwitcher');
-      if (roleSwitcher) {
-        roleSwitcher.addEventListener('change', async (e) => {
-          await this.switchDevRole(e.target.value);
-        });
-      }
+    const roleSwitcher = document.getElementById('roleSwitcher');
+    if (roleSwitcher) {
+      roleSwitcher.addEventListener('change', async (e) => {
+        await this.switchDevRole(e.target.value);
+      });
     }
 
     // 5. Initial auth or dev session
     await this.setupSession();
+
+    // Show role switcher for Admin or localhost
+    if (devSwitcherBar) {
+      if (this.currentRole === 'ADMIN' || isLocalhost) {
+        devSwitcherBar.style.display = 'flex';
+        if (roleSwitcher) roleSwitcher.value = this.currentRole;
+      } else {
+        devSwitcherBar.style.display = 'none';
+      }
+    }
+
     this.buildNav();
     this.renderCurrentView();
   }
@@ -70,7 +76,9 @@ class LuminaApp {
     // If running inside Telegram with initData
     if (this.tg && this.tg.initData) {
       try {
-        const authData = await api.authenticateTelegram(this.tg.initData);
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteToken = urlParams.get('inv') || null;
+        const authData = await api.authenticateTelegram(this.tg.initData, inviteToken);
         this.currentRole = authData.user.role;
         this.currentTab = this.getDefaultTabForRole(this.currentRole);
       } catch (e) {

@@ -189,6 +189,8 @@
     "homework": "Uy vazifalari",
     "no_homework": "Vazifalar yo'q!",
     "schedule": "Dars jadvali",
-    "no_schedule": "Dars jadvali bo'sh"
+    "no_schedule": "Dars jadvali bo'sh",
+    "invite_title": "Sinfga taklifnoma kodi",
+    "invite_desc": "Agar o'qituvchi sizga shaxsiy taklif kodini bergan bo'lsa, o'z sinfingizga ulanish uchun uni kiriting:"
   }
 }

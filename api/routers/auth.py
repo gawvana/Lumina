@@ -55,24 +55,60 @@ async def get_me(current_user: User = Depends(get_current_user)):
     )
 
 
-if settings.is_dev:
-    from fastapi import HTTPException
-    from shared.security import create_access_token
-    from shared.enums import UserRole
+from typing import Dict
+from fastapi import HTTPException
+from api.services.invite_service import redeem_invite
+from shared.security import create_access_token
+from shared.enums import UserRole
+from shared.i18n import t
 
-    @router.post("/dev-token", response_model=TokenResponse)
-    async def get_dev_token(role: str = "STUDENT", db: AsyncSession = Depends(get_db)):
-        """Development-only endpoint to issue auth tokens for local UI testing across roles."""
-        role_tg_map = {
-            UserRole.ADMIN.value: 1001,
-            UserRole.TEACHER.value: 1002,
-            UserRole.STUDENT.value: 2001,
-            UserRole.PARENT.value: 3001,
-        }
-        tg_id = role_tg_map.get(role.upper(), 2001)
-        stmt = (
+
+@router.post("/redeem-invite")
+async def redeem_user_invite(
+    payload: Dict[str, str],
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Allows an already logged-in user to redeem an invite token from the UI."""
+    token = payload.get("invite_token", "").strip()
+    if token.startswith("inv_"):
+        token = token.replace("inv_", "", 1)
+    if not token:
+        raise HTTPException(status_code=400, detail="Invite token is required")
+
+    success, err_key = await redeem_invite(db, token, current_user)
+    if not success:
+        raise HTTPException(status_code=400, detail=t(err_key or "invites.invalid", lang=current_user.language_code))
+
+    return {"status": "ok", "message": "Приглашение успешно активировано"}
+
+
+@router.post("/dev-token", response_model=TokenResponse)
+async def get_dev_token(role: str = "STUDENT", db: AsyncSession = Depends(get_db)):
+    """Allows instant role switching and preview for demonstration across roles."""
+    role_tg_map = {
+        UserRole.ADMIN.value: 1001,
+        UserRole.TEACHER.value: 1002,
+        UserRole.STUDENT.value: 2001,
+        UserRole.PARENT.value: 3001,
+    }
+    tg_id = role_tg_map.get(role.upper(), 2001)
+    stmt = (
+        select(User)
+        .where(User.telegram_id == tg_id)
+        .options(
+            selectinload(User.school),
+            selectinload(User.student_profile).selectinload(Student.student_class),
+            selectinload(User.teacher_profile),
+            selectinload(User.parent_profile),
+        )
+    )
+    res = await db.execute(stmt)
+    user = res.scalars().first()
+    if not user:
+        stmt_role = (
             select(User)
-            .where(User.telegram_id == tg_id)
+            .where(User.role == role.upper())
             .options(
                 selectinload(User.school),
                 selectinload(User.student_profile).selectinload(Student.student_class),
@@ -80,45 +116,32 @@ if settings.is_dev:
                 selectinload(User.parent_profile),
             )
         )
-        res = await db.execute(stmt)
-        user = res.scalars().first()
+        res_role = await db.execute(stmt_role)
+        user = res_role.scalars().first()
         if not user:
-            stmt_role = (
-                select(User)
-                .where(User.role == role.upper())
-                .options(
-                    selectinload(User.school),
-                    selectinload(User.student_profile).selectinload(Student.student_class),
-                    selectinload(User.teacher_profile),
-                    selectinload(User.parent_profile),
-                )
-            )
-            res_role = await db.execute(stmt_role)
-            user = res_role.scalars().first()
-            if not user:
-                raise HTTPException(status_code=404, detail=f"No user found for role {role}")
+            raise HTTPException(status_code=404, detail=f"No user found for role {role}")
 
-        access_token = create_access_token(
-            data={"sub": user.id, "role": user.role, "school_id": user.school_id}
-        )
+    access_token = create_access_token(
+        data={"sub": user.id, "role": user.role, "school_id": user.school_id}
+    )
 
-        class_name = None
-        if user.student_profile and user.student_profile.student_class:
-            class_name = user.student_profile.student_class.name
+    class_name = None
+    if user.student_profile and user.student_profile.student_class:
+        class_name = user.student_profile.student_class.name
 
-        profile = UserProfileResponse(
-            id=user.id,
-            school_id=user.school_id,
-            school_name=user.school.name if user.school else "Lumina",
-            telegram_id=user.telegram_id,
-            role=user.role,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            username=user.username,
-            language_code=user.language_code,
-            student_id=user.id if user.student_profile else None,
-            teacher_id=user.id if user.teacher_profile else None,
-            parent_id=user.id if user.parent_profile else None,
-            class_name=class_name,
-        )
-        return TokenResponse(access_token=access_token, user=profile)
+    profile = UserProfileResponse(
+        id=user.id,
+        school_id=user.school_id,
+        school_name=user.school.name if user.school else "Lumina",
+        telegram_id=user.telegram_id,
+        role=user.role,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        username=user.username,
+        language_code=user.language_code,
+        student_id=user.id if user.student_profile else None,
+        teacher_id=user.id if user.teacher_profile else None,
+        parent_id=user.id if user.parent_profile else None,
+        class_name=class_name,
+    )
+    return TokenResponse(access_token=access_token, user=profile)

@@ -1,5 +1,6 @@
 """Authentication service for validating Telegram WebApp initData and session tokens."""
 
+import logging
 from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -8,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from api.schemas.auth import TokenResponse, UserProfileResponse
 from api.services.invite_service import redeem_invite
+from db.models.academic import Class
 from db.models.feature_flag import FeatureFlag
 from db.models.grading import GradingSystem
 from db.models.school import School
@@ -16,6 +18,8 @@ from shared.config import settings
 from shared.enums import GradingSystemType, UserRole
 from shared.i18n import t
 from shared.security import create_access_token, validate_telegram_init_data
+
+logger = logging.getLogger("lumina.auth")
 
 
 async def authenticate_or_register_user(
@@ -112,34 +116,86 @@ async def authenticate_or_register_user(
             await db.commit()
             await db.refresh(user)
         else:
-            # School exists -> Invitation token is mandatory per security brief!
-            if not invite_token:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=t("invites.invalid", lang=lang_code),
+            if invite_token:
+                # Create user and redeem invite token
+                user = User(
+                    school_id=first_school.id,
+                    telegram_id=tg_id,
+                    role=UserRole.STUDENT.value,
+                    first_name=first_name,
+                    last_name=last_name,
+                    username=username,
+                    language_code=lang_code,
+                    is_active=True,
                 )
+                db.add(user)
+                await db.flush()
 
-            # Create placeholder user in first_school temporarily, then redeem invite
-            user = User(
-                school_id=first_school.id,
-                telegram_id=tg_id,
-                role=UserRole.STUDENT.value,
-                first_name=first_name,
-                last_name=last_name,
-                username=username,
-                language_code=lang_code,
-                is_active=True,
-            )
-            db.add(user)
-            await db.flush()
-
-            success, err_key = await redeem_invite(db, invite_token, user)
-            if not success:
-                await db.rollback()
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=t(err_key or "invites.invalid", lang=lang_code),
+                success, err_key = await redeem_invite(db, invite_token, user)
+                if not success:
+                    await db.rollback()
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=t(err_key or "invites.invalid", lang=lang_code),
+                    )
+            else:
+                # No invite token provided: Check if a real Telegram Admin exists (> 10000)
+                stmt_real_admin = select(User).where(
+                    User.role == UserRole.ADMIN.value,
+                    User.telegram_id > 10000,
                 )
+                existing_admin = (await db.execute(stmt_real_admin)).scalars().first()
+
+                if not existing_admin:
+                    # First real Telegram user is the Bot Creator / School Administrator!
+                    user = User(
+                        school_id=first_school.id,
+                        telegram_id=tg_id,
+                        role=UserRole.ADMIN.value,
+                        first_name=first_name,
+                        last_name=last_name,
+                        username=username,
+                        language_code=lang_code,
+                        is_active=True,
+                    )
+                    db.add(user)
+                    await db.commit()
+                    await db.refresh(user)
+                else:
+                    # New user entering directly without invite:
+                    # Enroll as Student in the school's primary class so they can immediately access the app
+                    class_stmt = (
+                        select(Class)
+                        .where(Class.school_id == first_school.id)
+                        .order_by(Class.created_at.asc())
+                    )
+                    default_class = (await db.execute(class_stmt)).scalars().first()
+
+                    user = User(
+                        school_id=first_school.id,
+                        telegram_id=tg_id,
+                        role=UserRole.STUDENT.value,
+                        first_name=first_name,
+                        last_name=last_name,
+                        username=username,
+                        language_code=lang_code,
+                        is_active=True,
+                    )
+                    db.add(user)
+                    await db.flush()
+
+                    student_prof = Student(
+                        user_id=user.id,
+                        class_id=default_class.id if default_class else None,
+                    )
+                    db.add(student_prof)
+                    await db.commit()
+                    await db.refresh(user)
+    elif invite_token:
+        # Existing user redeeming a new invite token (e.g. joining class or changing role)
+        success, err_key = await redeem_invite(db, invite_token, user)
+        if not success:
+            logger.warning("Could not redeem invite for existing user %s: %s", user.id, err_key)
 
     # Re-fetch user with relationships loaded
     stmt = (
