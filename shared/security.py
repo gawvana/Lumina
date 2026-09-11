@@ -8,21 +8,14 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qsl, unquote
 
-import os
-from dotenv import load_dotenv
 import jwt
-
-load_dotenv()
-
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "lumina-dev-super-secret-key-change-in-production")
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", str(60 * 24 * 7)))
+from shared.config import settings
 
 
 def validate_telegram_init_data(
     init_data_raw: str,
     bot_token: str,
-    max_age_seconds: int = 86400 * 3,  # 3 days tolerance
+    max_age_seconds: Optional[int] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Cryptographically validates Telegram WebApp initData string using HMAC-SHA256.
@@ -31,6 +24,9 @@ def validate_telegram_init_data(
     """
     if not init_data_raw or not bot_token:
         return None
+
+    if max_age_seconds is None:
+        max_age_seconds = settings.INIT_DATA_MAX_AGE_SECONDS
 
     try:
         parsed_items = dict(parse_qsl(init_data_raw, keep_blank_values=True))
@@ -56,13 +52,18 @@ def validate_telegram_init_data(
         if not hmac.compare_digest(received_hash, calculated_hash):
             return None
 
-        # Check timestamp expiration
+        # Check timestamp expiration and clock skew
         auth_date = int(parsed_items.get("auth_date", 0))
         if auth_date <= 0:
             return None
 
         current_time = int(time.time())
+        # Replay window check: must not be older than max_age_seconds
         if current_time - auth_date > max_age_seconds:
+            return None
+
+        # Clock skew tolerance: auth_date should not be more than 60s in the future
+        if auth_date - current_time > 60:
             return None
 
         # Parse user JSON if present
@@ -81,26 +82,40 @@ def validate_telegram_init_data(
 def create_access_token(
     data: Dict[str, Any],
     expires_delta: Optional[timedelta] = None,
-    secret_key: str = JWT_SECRET_KEY,
+    secret_key: Optional[str] = None,
 ) -> str:
-    """Creates a signed JWT access token."""
+    """Creates a signed JWT access token with issuer, audience, and expiration."""
+    key = secret_key or settings.JWT_SECRET_KEY
     to_encode = data.copy()
     now = datetime.now(timezone.utc)
     if expires_delta:
         expire = now + expires_delta
     else:
-        expire = now + timedelta(minutes=JWT_EXPIRATION_MINUTES)
-    to_encode.update({"exp": expire, "iat": now})
-    return jwt.encode(to_encode, secret_key, algorithm=JWT_ALGORITHM)
+        expire = now + timedelta(minutes=settings.JWT_EXPIRATION_MINUTES)
+
+    to_encode.update({
+        "exp": expire,
+        "iat": now,
+        "iss": settings.JWT_ISSUER,
+        "aud": settings.JWT_AUDIENCE,
+    })
+    return jwt.encode(to_encode, key, algorithm=settings.JWT_ALGORITHM)
 
 
 def decode_access_token(
     token: str,
-    secret_key: str = JWT_SECRET_KEY,
+    secret_key: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """Decodes and validates a signed JWT access token."""
+    key = secret_key or settings.JWT_SECRET_KEY
     try:
-        payload = jwt.decode(token, secret_key, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(
+            token,
+            key,
+            algorithms=[settings.JWT_ALGORITHM],
+            issuer=settings.JWT_ISSUER,
+            audience=settings.JWT_AUDIENCE,
+        )
         return payload
     except jwt.PyJWTError:
         return None

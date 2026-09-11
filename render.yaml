@@ -1,3 +1,9 @@
+databases:
+  - name: lumina-postgres
+    databaseName: lumina
+    user: lumina_user
+    plan: free
+
 services:
   - type: web
     name: lumina-backend
@@ -5,8 +11,8 @@ services:
     region: frankfurt
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /api/v1/shared/health
+    startCommand: alembic upgrade head && uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     autoDeploy: true
     envVars:
       - key: ENVIRONMENT
@@ -14,10 +20,16 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.10
       - key: DATABASE_URL
-        value: sqlite+aiosqlite:///./lumina.db
+        fromDatabase:
+          name: lumina-postgres
+          property: connectionString
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: TELEGRAM_BOT_TOKEN
         sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
       - key: WEBAPP_URL
         sync: false
+      - key: ALLOWED_ORIGINS
+        value: "https://web.telegram.org,https://oauth.telegram.org"

@@ -1,13 +1,16 @@
 """Authentication router for Telegram WebApp login and user profile."""
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from api.dependencies import get_current_user
 from api.schemas.auth import TelegramAuthRequest, TokenResponse, UserProfileResponse
 from api.services.auth_service import authenticate_or_register_user
 from db.models.user import Student, User
 from db.session import get_db
+from shared.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -50,3 +53,72 @@ async def get_me(current_user: User = Depends(get_current_user)):
         parent_id=current_user.id if current_user.parent_profile else None,
         class_name=class_name,
     )
+
+
+if settings.is_dev:
+    from fastapi import HTTPException
+    from shared.security import create_access_token
+    from shared.enums import UserRole
+
+    @router.post("/dev-token", response_model=TokenResponse)
+    async def get_dev_token(role: str = "STUDENT", db: AsyncSession = Depends(get_db)):
+        """Development-only endpoint to issue auth tokens for local UI testing across roles."""
+        role_tg_map = {
+            UserRole.ADMIN.value: 1001,
+            UserRole.TEACHER.value: 1002,
+            UserRole.STUDENT.value: 2001,
+            UserRole.PARENT.value: 3001,
+        }
+        tg_id = role_tg_map.get(role.upper(), 2001)
+        stmt = (
+            select(User)
+            .where(User.telegram_id == tg_id)
+            .options(
+                selectinload(User.school),
+                selectinload(User.student_profile).selectinload(Student.student_class),
+                selectinload(User.teacher_profile),
+                selectinload(User.parent_profile),
+            )
+        )
+        res = await db.execute(stmt)
+        user = res.scalars().first()
+        if not user:
+            stmt_role = (
+                select(User)
+                .where(User.role == role.upper())
+                .options(
+                    selectinload(User.school),
+                    selectinload(User.student_profile).selectinload(Student.student_class),
+                    selectinload(User.teacher_profile),
+                    selectinload(User.parent_profile),
+                )
+            )
+            res_role = await db.execute(stmt_role)
+            user = res_role.scalars().first()
+            if not user:
+                raise HTTPException(status_code=404, detail=f"No user found for role {role}")
+
+        access_token = create_access_token(
+            data={"sub": user.id, "role": user.role, "school_id": user.school_id}
+        )
+
+        class_name = None
+        if user.student_profile and user.student_profile.student_class:
+            class_name = user.student_profile.student_class.name
+
+        profile = UserProfileResponse(
+            id=user.id,
+            school_id=user.school_id,
+            school_name=user.school.name if user.school else "Lumina",
+            telegram_id=user.telegram_id,
+            role=user.role,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            username=user.username,
+            language_code=user.language_code,
+            student_id=user.id if user.student_profile else None,
+            teacher_id=user.id if user.teacher_profile else None,
+            parent_id=user.id if user.parent_profile else None,
+            class_name=class_name,
+        )
+        return TokenResponse(access_token=access_token, user=profile)

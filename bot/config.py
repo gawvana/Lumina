@@ -1,9 +1,7 @@
 """Telegram Bot configuration settings."""
 
-import os
-from dotenv import load_dotenv
+from shared.config import settings
 
-load_dotenv()
-
-BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "123456789:ABCdefGhIJKlmNoPQRstuVWXyz_LuminaDev")
-WEBAPP_URL = os.getenv("WEBAPP_URL", "http://localhost:8000/app")
+BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN
+WEBAPP_URL = settings.WEBAPP_URL
+BOT_USERNAME = settings.TELEGRAM_BOT_USERNAME

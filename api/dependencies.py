@@ -1,13 +1,14 @@
 """FastAPI dependency injection for authentication, RBAC, and school isolation."""
 
-from typing import List
+from typing import List, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from db.models.user import User
+from db.models.academic import Class, Lesson, Subject, TeacherSubjectClass
+from db.models.user import Student, User
 from db.session import get_db
 from shared.enums import UserRole
 from shared.i18n import t
@@ -81,3 +82,45 @@ def verify_school_isolation(current_user: User, target_school_id: str) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail=t("errors.school_mismatch", lang=current_user.language_code),
         )
+
+
+async def verify_teacher_assignment(
+    db: AsyncSession,
+    teacher_id: str,
+    class_id: str,
+    subject_id: str,
+) -> bool:
+    """Verifies that teacher is actively assigned to teach subject in class."""
+    stmt = select(TeacherSubjectClass).where(
+        TeacherSubjectClass.teacher_id == teacher_id,
+        TeacherSubjectClass.class_id == class_id,
+        TeacherSubjectClass.subject_id == subject_id,
+    )
+    res = await db.execute(stmt)
+    return res.scalars().first() is not None
+
+
+async def verify_student_in_class(
+    db: AsyncSession,
+    student_id: str,
+    class_id: str,
+    school_id: str,
+) -> Student:
+    """Verifies that student belongs to the school and is enrolled in the given class."""
+    stmt = (
+        select(Student)
+        .join(User, Student.id == User.id)
+        .where(
+            Student.id == student_id,
+            Student.class_id == class_id,
+            User.school_id == school_id,
+        )
+    )
+    res = await db.execute(stmt)
+    student = res.scalars().first()
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Student is not enrolled in this class or school mismatch",
+        )
+    return student

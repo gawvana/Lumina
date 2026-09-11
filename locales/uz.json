@@ -149,5 +149,46 @@
     "new_homework": "{subject} fanidan {date} sanasiga yangi vazifa",
     "absence_recorded": "{subject} darsida qatnashmadi ({status})",
     "absence_note_approved": "{from} dan {to} gacha bo'lgan tushuntirish xati o'qituvchi tomonidan tasdiqlandi"
+  },
+  "parent": {
+    "children": "Mening farzandlarim",
+    "select_child": "Farzandni tanlang",
+    "gpa": "O'rtacha ball",
+    "recent_grades": "So'nggi baholar",
+    "absence_notes": "Qoldirish xatlari",
+    "absence_success": "Tushuntirish xati o'qituvchilarga yuborildi",
+    "child_homework": "Farzandning uy vazifalari",
+    "child_schedule": "Dars jadvali"
+  },
+  "admin": {
+    "title": "Maktabni boshqarish",
+    "overview": "Umumiy ko'rinish",
+    "classes": "Sinflar",
+    "subjects": "Fanlar",
+    "teachers": "O'qituvchilar",
+    "students": "O'quvchilar",
+    "parents": "Ota-onalar",
+    "curriculum": "O'quv rejasi",
+    "invites": "Taklifnomalar",
+    "audit": "Audit jurnali",
+    "create_class": "Sinf yaratish",
+    "create_subject": "Fan yaratish",
+    "assign_teacher": "O'qituvchini tayinlash"
+  },
+  "student": {
+    "greeting": "Lumina-ga xush kelibsiz 👋",
+    "class": "Sinf",
+    "level": "Daraja / XP",
+    "urgent_hw": "Muddatlar",
+    "today_lessons": "Bugungi darslar",
+    "no_lessons_today": "Bugun darslar yo'q",
+    "latest_grade": "Oxirgi baho",
+    "no_comment": "Izohsiz",
+    "gpa": "Umumiy o'rtacha ball",
+    "no_grades": "Hozircha baholar yo'q",
+    "homework": "Uy vazifalari",
+    "no_homework": "Vazifalar yo'q!",
+    "schedule": "Dars jadvali",
+    "no_schedule": "Dars jadvali bo'sh"
   }
 }

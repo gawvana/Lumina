@@ -9,7 +9,7 @@
   flex-direction: column;
   position: relative;
   background-color: var(--bg-primary);
-  padding-bottom: 84px; /* Space for bottom nav */
+  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Header */
@@ -22,6 +22,7 @@
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
   padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -109,7 +110,7 @@
   max-width: 480px;
   margin: 0 auto;
   z-index: 50;
-  height: 64px;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -118,6 +119,7 @@
   align-items: center;
   justify-content: space-around;
   padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .nav-item {

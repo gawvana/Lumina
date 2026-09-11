@@ -25,23 +25,31 @@ class I18nManager {
     this.updateDOM();
   }
 
-  t(key, params = {}) {
+  t(key, fallbackOrParams = null, params = {}) {
+    let fallback = null;
+    let actualParams = params;
+    if (typeof fallbackOrParams === 'string') {
+      fallback = fallbackOrParams;
+    } else if (typeof fallbackOrParams === 'object' && fallbackOrParams !== null) {
+      actualParams = fallbackOrParams;
+    }
+
     const keys = key.split('.');
     let val = this.translations;
     for (const k of keys) {
       if (val && typeof val === 'object' && k in val) {
         val = val[k];
       } else {
-        return key;
+        return fallback || key;
       }
     }
 
-    if (typeof val === 'string' && params) {
+    if (typeof val === 'string' && actualParams) {
       return val.replace(/\{(\w+)\}/g, (match, paramKey) => {
-        return params[paramKey] !== undefined ? params[paramKey] : match;
+        return actualParams[paramKey] !== undefined ? actualParams[paramKey] : match;
       });
     }
-    return val || key;
+    return val || fallback || key;
   }
 
   updateDOM() {

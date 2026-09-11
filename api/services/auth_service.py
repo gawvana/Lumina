@@ -1,7 +1,6 @@
 """Authentication service for validating Telegram WebApp initData and session tokens."""
 
-import os
-from typing import Optional, Tuple
+from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,24 +12,30 @@ from db.models.feature_flag import FeatureFlag
 from db.models.grading import GradingSystem
 from db.models.school import School
 from db.models.user import Student, User
+from shared.config import settings
 from shared.enums import GradingSystemType, UserRole
 from shared.i18n import t
 from shared.security import create_access_token, validate_telegram_init_data
-
-DEFAULT_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "123456789:ABCdefGhIJKlmNoPQRstuVWXyz_LuminaDev")
 
 
 async def authenticate_or_register_user(
     db: AsyncSession,
     init_data_raw: str,
     invite_token: Optional[str] = None,
-    bot_token: str = DEFAULT_BOT_TOKEN,
+    bot_token: Optional[str] = None,
 ) -> TokenResponse:
     """
     Validates Telegram WebApp initData HMAC-SHA256 signature, resolves user,
     processes invite tokens, and issues a JWT token.
     """
-    validated = validate_telegram_init_data(init_data_raw, bot_token)
+    token_to_use = bot_token or settings.TELEGRAM_BOT_TOKEN
+    if not token_to_use:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Server misconfiguration: TELEGRAM_BOT_TOKEN is not configured.",
+        )
+
+    validated = validate_telegram_init_data(init_data_raw, token_to_use)
     if not validated or "user" not in validated:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -71,7 +76,7 @@ async def authenticate_or_register_user(
             first_school = School(
                 name="Lumina Demonstration School",
                 code="LUMINA-01",
-                settings={"country": "UZ", "timezone": "Asia/Tashkent"},
+                settings={"country": "UZ", "timezone": settings.DEFAULT_TIMEZONE},
                 is_active=True,
             )
             db.add(first_school)

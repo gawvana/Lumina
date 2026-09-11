@@ -8,7 +8,7 @@
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "*"
+          "value": "https://web.telegram.org"
         },
         {
           "key": "Content-Security-Policy",

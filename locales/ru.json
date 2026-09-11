@@ -149,5 +149,46 @@
     "new_homework": "Новое ДЗ по предмету {subject} на {date}",
     "absence_recorded": "Отмечен пропуск урока {subject} ({status})",
     "absence_note_approved": "Записка об отсутствии с {from} по {to} подтверждена учителем"
+  },
+  "parent": {
+    "children": "Мои дети",
+    "select_child": "Выберите ребенка",
+    "gpa": "Средний балл",
+    "recent_grades": "Последние оценки",
+    "absence_notes": "Записки об отсутствии",
+    "absence_success": "Записка успешно отправлена учителям",
+    "child_homework": "Домашние задания ребенка",
+    "child_schedule": "Расписание занятий"
+  },
+  "admin": {
+    "title": "Управление школой",
+    "overview": "Обзор",
+    "classes": "Классы",
+    "subjects": "Предметы",
+    "teachers": "Учителя",
+    "students": "Ученики",
+    "parents": "Родители",
+    "curriculum": "Учебный план",
+    "invites": "Приглашения",
+    "audit": "Журнал аудита",
+    "create_class": "Создать класс",
+    "create_subject": "Создать предмет",
+    "assign_teacher": "Назначить учителя"
+  },
+  "student": {
+    "greeting": "Добро пожаловать в Lumina 👋",
+    "class": "Класс",
+    "level": "Уровень / XP",
+    "urgent_hw": "Дедлайны",
+    "today_lessons": "Уроки на сегодня",
+    "no_lessons_today": "Сегодня уроков нет",
+    "latest_grade": "Последняя оценка",
+    "no_comment": "Без комментария",
+    "gpa": "Общий средний балл",
+    "no_grades": "Оценок пока нет",
+    "homework": "Домашние задания",
+    "no_homework": "Заданий нет!",
+    "schedule": "Расписание занятий",
+    "no_schedule": "Расписание пусто"
   }
 }

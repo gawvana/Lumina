@@ -30,6 +30,7 @@ class HomeworkStatus(str, Enum):
 
 class LessonStatus(str, Enum):
     SCHEDULED = "SCHEDULED"
+    COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
     REPLACED = "REPLACED"
 

@@ -2,9 +2,10 @@
 Enforces strict zero-leakage RBAC: a student can only ever receive their own data.
 """
 
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -13,7 +14,7 @@ from api.dependencies import require_roles
 from db.models.academic import Class, Lesson, Subject
 from db.models.grading import Grade, GradeType
 from db.models.homework import Homework, HomeworkSubmission
-from db.models.user import Student, User
+from db.models.user import Student, Teacher, User
 from db.session import get_db
 from shared.enums import HomeworkStatus, UserRole
 from shared.i18n import t
@@ -25,6 +26,10 @@ router = APIRouter(
 )
 
 
+class HomeworkStatusUpdateRequest(BaseModel):
+    status: str = Field(..., pattern="^(TODO|DONE)$")
+
+
 @router.get("/dashboard")
 async def get_student_dashboard(
     current_user: User = Depends(require_roles(UserRole.STUDENT, UserRole.ADMIN)),
@@ -34,7 +39,13 @@ async def get_student_dashboard(
     Returns student dashboard summary: today's lessons, urgent homework, latest grade.
     Strictly isolated to current_user.
     """
-    student = await db.get(Student, current_user.id)
+    stmt = (
+        select(Student)
+        .where(Student.id == current_user.id)
+        .options(selectinload(Student.student_class))
+    )
+    res = await db.execute(stmt)
+    student = res.scalars().first()
     class_id = student.class_id if student else None
 
     # Today's lessons
@@ -44,7 +55,10 @@ async def get_student_dashboard(
         l_stmt = (
             select(Lesson)
             .where(Lesson.class_id == class_id, Lesson.lesson_date == today)
-            .options(selectinload(Lesson.subject), selectinload(Lesson.teacher).selectinload(User.teacher_profile))
+            .options(
+                selectinload(Lesson.subject),
+                selectinload(Lesson.teacher).selectinload(Teacher.user),
+            )
             .order_by(Lesson.period_number)
         )
         l_res = await db.execute(l_stmt)
@@ -216,11 +230,23 @@ async def get_student_homework(
 @router.patch("/homework/{homework_id}/status")
 async def toggle_homework_status(
     homework_id: str,
-    status_val: str = Query(..., pattern="^(TODO|DONE)$"),
+    payload: HomeworkStatusUpdateRequest,
     current_user: User = Depends(require_roles(UserRole.STUDENT, UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Marks homework completed or pending for current student."""
+    """Marks homework completed or pending for current student with strict enrollment check."""
+    status_val = payload.status
+    student = await db.get(Student, current_user.id)
+    if not student or not student.class_id:
+        raise HTTPException(status_code=404, detail="Student profile or class not found")
+
+    hw = await db.get(Homework, homework_id)
+    if not hw or hw.class_id != student.class_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Homework not found or not assigned to student's class",
+        )
+
     stmt = select(HomeworkSubmission).where(
         HomeworkSubmission.homework_id == homework_id,
         HomeworkSubmission.student_id == current_user.id,
@@ -228,17 +254,19 @@ async def toggle_homework_status(
     res = await db.execute(stmt)
     submission = res.scalars().first()
 
+    now_utc = datetime.now(timezone.utc)
+
     if not submission:
         submission = HomeworkSubmission(
             homework_id=homework_id,
             student_id=current_user.id,
             status=status_val,
-            submitted_at=datetime.now(timezone.utc) if status_val == "DONE" else None,
+            submitted_at=now_utc if status_val == "DONE" else None,
         )
         db.add(submission)
     else:
         submission.status = status_val
-        submission.submitted_at = datetime.now(timezone.utc) if status_val == "DONE" else None
+        submission.submitted_at = now_utc if status_val == "DONE" else None
 
     await db.commit()
     return {"status": submission.status}
@@ -249,7 +277,7 @@ async def get_student_schedule(
     current_user: User = Depends(require_roles(UserRole.STUDENT, UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
-    """Returns weekly timetable for student's class."""
+    """Returns timetable for student's class."""
     student = await db.get(Student, current_user.id)
     if not student or not student.class_id:
         return []
@@ -257,7 +285,7 @@ async def get_student_schedule(
     stmt = (
         select(Lesson)
         .where(Lesson.class_id == student.class_id)
-        .options(selectinload(Lesson.subject), selectinload(Lesson.teacher).selectinload(User.teacher_profile))
+        .options(selectinload(Lesson.subject), selectinload(Lesson.teacher).selectinload(Teacher.user))
         .order_by(Lesson.lesson_date, Lesson.period_number)
         .limit(60)
     )

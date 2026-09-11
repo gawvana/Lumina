@@ -1,13 +1,16 @@
-"""FastAPI router for Telegram Bot Webhook integration (Serverless ready)."""
+"""FastAPI router for Telegram Bot Webhook integration (Serverless ready and secured)."""
 
 import logging
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 
-from bot.config import BOT_TOKEN, WEBAPP_URL
+from api.dependencies import require_roles
 from bot.handlers import start_router
+from db.models.user import User
+from shared.config import settings
+from shared.enums import UserRole
 
 logger = logging.getLogger("lumina.webhook")
 
@@ -19,18 +22,27 @@ dp.include_router(start_router)
 
 # Initialize Bot instance if token exists and looks valid
 bot: Optional[Bot] = None
-if BOT_TOKEN and ":" in BOT_TOKEN and not BOT_TOKEN.endswith("_LuminaDev"):
+if settings.TELEGRAM_BOT_TOKEN and ":" in settings.TELEGRAM_BOT_TOKEN:
     try:
-        bot = Bot(token=BOT_TOKEN)
+        bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
     except Exception as exc:
         logger.warning("Failed to initialize Telegram Bot instance: %s", exc)
 
 
 @router.post("/webhook")
 async def telegram_bot_webhook(request: Request):
-    """Receives Telegram Update objects from Telegram servers and passes to aiogram."""
+    """Receives Telegram Update objects securely with secret token verification."""
+    # Verify Telegram Webhook Secret Token if configured
+    if settings.TELEGRAM_WEBHOOK_SECRET:
+        secret_header = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+        if secret_header != settings.TELEGRAM_WEBHOOK_SECRET:
+            logger.warning("Rejected Telegram webhook request: invalid or missing secret token header.")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid secret token",
+            )
+
     if not bot:
-        # Log and accept to prevent Telegram from repeatedly retrying when token isn't ready
         return {"status": "bot_not_configured"}
 
     try:
@@ -40,21 +52,31 @@ async def telegram_bot_webhook(request: Request):
         return {"status": "ok"}
     except Exception as exc:
         logger.error("Error processing Telegram update: %s", exc)
-        return {"status": "error", "detail": str(exc)}
+        return {"status": "error", "detail": "Internal update processing error"}
 
 
-@router.get("/set-webhook")
-async def set_telegram_webhook(url: Optional[str] = None):
-    """Configures Telegram servers to send updates to this Vercel deployment."""
+@router.post("/set-webhook")
+async def set_telegram_webhook(
+    url: Optional[str] = None,
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+):
+    """
+    Configures Telegram servers to send updates to this deployment.
+    STRICTLY RESTRICTED TO ADMINS to prevent webhook hijacking.
+    """
     if not bot:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="TELEGRAM_BOT_TOKEN is not configured with a valid token in environment variables.",
+            detail="TELEGRAM_BOT_TOKEN is not configured in environment variables.",
         )
 
-    webhook_url = url or f"{WEBAPP_URL.rstrip('/')}/api/v1/bot/webhook"
+    webhook_url = url or f"{settings.WEBAPP_URL.rstrip('/')}/api/v1/bot/webhook"
     try:
-        result = await bot.set_webhook(url=webhook_url, drop_pending_updates=True)
+        set_webhook_kwargs = {"url": webhook_url, "drop_pending_updates": True}
+        if settings.TELEGRAM_WEBHOOK_SECRET:
+            set_webhook_kwargs["secret_token"] = settings.TELEGRAM_WEBHOOK_SECRET
+
+        result = await bot.set_webhook(**set_webhook_kwargs)
         info = await bot.get_webhook_info()
         return {
             "success": result,
@@ -63,6 +85,7 @@ async def set_telegram_webhook(url: Optional[str] = None):
                 "url": info.url,
                 "pending_update_count": info.pending_update_count,
                 "last_error_message": info.last_error_message,
+                "has_custom_certificate": info.has_custom_certificate,
             },
         }
     except Exception as exc:
@@ -73,8 +96,10 @@ async def set_telegram_webhook(url: Optional[str] = None):
 
 
 @router.get("/webhook-info")
-async def get_telegram_webhook_info():
-    """Retrieves current Telegram webhook status."""
+async def get_telegram_webhook_info(
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
+):
+    """Retrieves current Telegram webhook status. Restricted to Admins."""
     if not bot:
         return {"status": "bot_not_configured", "token_configured": False}
 

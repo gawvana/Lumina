@@ -3,9 +3,11 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from db.models.academic import Class
 from db.models.audit import AuditLog
 from db.models.invite import Invite
 from db.models.user import Parent, Student, StudentParent, Teacher, User
@@ -22,7 +24,33 @@ async def create_invite(
     target_class_id: Optional[str] = None,
     target_student_id: Optional[str] = None,
 ) -> Invite:
-    """Generates an expiring, single-use invite token."""
+    """Generates an expiring, single-use invite token with tenant-verified target entities."""
+    # Verify role validity
+    valid_roles = [r.value for r in UserRole]
+    if role not in valid_roles:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid role: {role}",
+        )
+
+    # Verify target_class_id belongs to school
+    if target_class_id:
+        cls = await db.get(Class, target_class_id)
+        if not cls or cls.school_id != school_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Target class not found or belongs to another school",
+            )
+
+    # Verify target_student_id belongs to school
+    if target_student_id:
+        st_user = await db.get(User, target_student_id)
+        if not st_user or st_user.school_id != school_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Target student not found or belongs to another school",
+            )
+
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=duration_hours)
 
@@ -49,7 +77,13 @@ async def create_invite(
         entity_type=AuditEntityType.INVITE.value,
         entity_id=invite.id,
         action=AuditAction.CREATE.value,
-        new_values={"role": role, "expires_at": expires_at.isoformat(), "max_uses": max_uses},
+        new_values={
+            "role": role,
+            "expires_at": expires_at.isoformat(),
+            "max_uses": max_uses,
+            "target_class_id": target_class_id,
+            "target_student_id": target_student_id,
+        },
         reason="Invite token generated",
     )
     db.add(audit)
@@ -64,18 +98,28 @@ async def redeem_invite(
     user: User,
 ) -> Tuple[bool, Optional[str]]:
     """
-    Redeems an invite token, binds the user to the school and role,
-    and updates the invite usage count.
+    Redeems an invite token with concurrency safety (with_for_update).
+    Binds user to the school and role, updates usage count, and logs audit.
     """
-    stmt = select(Invite).where(Invite.token == token)
+    # Use row-level lock where supported
+    stmt = select(Invite).where(Invite.token == token).with_for_update()
     result = await db.execute(stmt)
     invite = result.scalars().first()
 
     if not invite:
         return False, "invites.invalid"
 
-    if not invite.is_valid():
-        return False, "invites.expired" if datetime.now(timezone.utc) >= invite.expires_at.replace(tzinfo=timezone.utc) else "invites.already_used"
+    # Strict expiration check
+    exp = invite.expires_at
+    if exp.tzinfo is None:
+        exp = exp.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+
+    if now >= exp:
+        return False, "invites.expired"
+
+    if not invite.is_active or invite.current_uses >= invite.max_uses:
+        return False, "invites.already_used"
 
     # Bind user to school and role
     old_school = user.school_id
@@ -119,7 +163,7 @@ async def redeem_invite(
                 )
                 db.add(link)
 
-    # Increment invite uses
+    # Increment invite uses atomically
     invite.current_uses += 1
     if invite.current_uses >= invite.max_uses:
         invite.is_active = False

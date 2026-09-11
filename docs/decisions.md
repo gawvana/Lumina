@@ -44,3 +44,39 @@ This document records the design and architectural choices made autonomously dur
 * **Context**: Need high-speed design intelligence lookup without external npm or pip bloat.
 * **Choice**: Integrated `ui-ux-pro-max` search script via pure standard-library Python (BM25 + regex).
 * **Rationale**: Reliable, instant lookup for design tokens, font pairings, and color palettes on all operating systems.
+
+---
+
+### Decision 07: Strict Multi-Tenant Authorization Chain on Teacher Journal Mutations
+* **Context**: A teacher could attempt to grade classes or subjects outside their curricular appointment within the same school.
+* **Choice**: Every teacher mutation requires verifying existing `TeacherSubjectClass` assignment matching the target student, lesson, and class.
+* **Rationale**: Prevents internal unauthorized grade manipulation while maintaining multi-teacher support for shared grades.
+
+---
+
+### Decision 08: Atomic Row-Level Locking on Invite Token Redemption
+* **Context**: High-concurrency invite redemption requests could allow single-use invites to be redeemed multiple times.
+* **Choice**: `with_for_update()` row-level locks on the `invites` table inside an atomic transaction.
+* **Rationale**: Eliminates race conditions and guarantees strict single-use semantics under concurrent loads.
+
+---
+
+### Decision 09: Dynamic School Timezone Localization
+* **Context**: Schools across Uzbekistan and international locations operate in different time zones; timestamps must not cause day-shift anomalies.
+* **Choice**: All database timestamps are stored in UTC (`timezone.utc`). Academic schedules, lesson periods, homework deadlines, and attendance are presented relative to the school's configured timezone (`settings.country`, default `Asia/Tashkent`).
+* **Rationale**: Guarantees accurate lesson calendar matching without local clock skew issues.
+
+---
+
+### Decision 10: Serverless Telegram Webhook with Secret Token Verification
+* **Context**: Open webhook endpoints can be spammed or spoofed by malicious actors.
+* **Choice**: Enforce `X-Telegram-Bot-Api-Secret-Token` matching `settings.TELEGRAM_WEBHOOK_SECRET` on all incoming updates. Administrative webhook configuration endpoints (`/set-webhook`) are strictly restricted to authenticated Admins.
+* **Rationale**: Prevents webhook hijacking and unauthorized update injection into the bot event loop.
+
+---
+
+### Decision 11: PostgreSQL Production Database with Async Alembic Migrations
+* **Context**: SQLite file concurrency issues and ephemeral filesystems on serverless/cloud platforms make SQLite unsuitable for production.
+* **Choice**: Configured async Alembic with pure DDL migrations for PostgreSQL (`asyncpg`), forbidding SQLite in production via `shared.config.Settings` validator.
+* **Rationale**: Ensures enterprise durability, connection pooling, and seamless automated zero-downtime schema migrations.
+
