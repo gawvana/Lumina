@@ -478,5 +478,87 @@ export const TeacherView = {
       container.innerHTML = `<div class="card"><p class="error-text">${escapeHtml(e.message)}</p></div>`;
     }
     lucide.createIcons();
+  },
+
+  async renderSeating(container) {
+    container.innerHTML = `<div class="loading-state"><i data-lucide="loader-2" class="animate-spin"></i></div>`;
+    lucide.createIcons();
+
+    try {
+      const classes = await api.getTeacherClasses();
+      if (classes.length === 0) {
+        container.innerHTML = `<div class="card"><p class="empty-text">У вас нет назначенных классов</p></div>`;
+        lucide.createIcons();
+        return;
+      }
+
+      const activeClass = TeacherView.activeClassId || classes[0].class_id;
+      TeacherView.activeClassId = activeClass;
+
+      const seatingData = await api.getSeatingChart(activeClass);
+
+      container.innerHTML = `
+        <div class="card" style="padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <select class="form-input" id="seatingClassSelect" style="flex:1;margin-right:10px;">
+              ${classes.map(c => `
+                <option value="${c.class_id}" ${c.class_id === activeClass ? 'selected' : ''}>
+                  ${escapeHtml(c.class_name)}
+                </option>
+              `).join('')}
+            </select>
+            <button class="btn btn-primary" id="pickRandomStudentBtn" style="padding:8px 14px;font-size:12px;white-space:nowrap;">
+              🎲 Вызвать
+            </button>
+          </div>
+        </div>
+
+        <div id="randomStudentBanner" style="display:none;margin-bottom:12px;padding:14px;background:var(--color-primary-subtle);border:1px solid var(--color-primary);border-radius:var(--radius-md);text-align:center;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--color-primary);">К доске вызывается:</div>
+          <div id="randomStudentName" style="font-size:18px;font-weight:800;color:var(--text-primary);margin-top:2px;"></div>
+        </div>
+
+        <div class="seating-grid">
+          ${seatingData.desks.map(d => `
+            <div class="desk-card ${d.is_empty ? 'empty' : ''}" data-row="${d.row}" data-col="${d.col}" data-student="${d.student ? d.student.id : ''}" data-name="${d.student ? escapeHtml(d.student.name) : ''}">
+              <div class="desk-label">${escapeHtml(d.desk_label)}</div>
+              ${d.student ? `
+                <div class="desk-student-name">${escapeHtml(d.student.name)}</div>
+                <div class="desk-level-badge">Lvl ${d.student.level} • ${d.student.xp} XP</div>
+              ` : `
+                <span style="font-size:11px;color:var(--text-muted);">Свободно</span>
+              `}
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      container.querySelector('#seatingClassSelect')?.addEventListener('change', (e) => {
+        TeacherView.activeClassId = e.target.value;
+        TeacherView.renderSeating(container);
+      });
+
+      container.querySelector('#pickRandomStudentBtn')?.addEventListener('click', async () => {
+        try {
+          triggerHaptic('impact', 'medium');
+          const picked = await api.pickRandomStudent(activeClass);
+          if (picked) {
+            const banner = container.querySelector('#randomStudentBanner');
+            const nameEl = container.querySelector('#randomStudentName');
+            banner.style.display = 'block';
+            nameEl.textContent = `${picked.first_name} ${picked.last_name || ''}`;
+            triggerHaptic('notification', 'success');
+          } else {
+            showToast('Нет доступных учеников', 'info');
+          }
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      });
+
+    } catch (e) {
+      container.innerHTML = `<div class="card"><p class="error-text">${escapeHtml(e.message)}</p></div>`;
+    }
+    lucide.createIcons();
   }
 };

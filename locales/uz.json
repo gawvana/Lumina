@@ -189,8 +189,35 @@
     "homework": "Uy vazifalari",
     "no_homework": "Vazifalar yo'q!",
     "schedule": "Dars jadvali",
-    "no_schedule": "Dars jadvali bo'sh",
-    "invite_title": "Sinfga taklifnoma kodi",
-    "invite_desc": "Agar o'qituvchi sizga shaxsiy taklif kodini bergan bo'lsa, o'z sinfingizga ulanish uchun uni kiriting:"
+    "no_schedule": "Jadval bo'sh",
+    "invite_title": "Sinfga taklif kodi",
+    "invite_desc": "Agar o'qituvchi sizga maxsus kod bergan bo'lsa, sinfga birikish uchun uni kiriting:"
+  },
+  "seating": {
+    "title": "Interaktiv partalar joylashuvi",
+    "random_student": "Doskaga chiqarish",
+    "random_picked": "Doskaga taklif qilinadi:",
+    "empty_desk": "Bo'sh",
+    "assign_student": "O'quvchini o'tqazish",
+    "unassigned": "Partaga biriktirilmaganlar"
+  },
+  "gamification": {
+    "vibe_title": "Bugungi kayfiyatingiz",
+    "vibe_energized": "⚡ G'ayratli",
+    "vibe_focused": "🎯 Diqqatli",
+    "vibe_calm": "😌 Xotirjam",
+    "vibe_tired": "😴 Charchagan",
+    "streak": "Ketma-ket kunlar",
+    "level": "Daraja",
+    "achievements": "Yutuqlar"
+  },
+  "study": {
+    "flashcards": "Yodlash kartochkalari",
+    "ai_assistant": "AI-yordamchi",
+    "ask_ai": "Maslahat olish",
+    "pre_test": "Nazorat oldi tezkor takrorlash",
+    "backpack": "Rukzak / Fayllar",
+    "know": "Bilaman",
+    "repeat": "Takrorlash"
   }
 }

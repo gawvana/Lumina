@@ -10,6 +10,17 @@ from db.models.attendance import Attendance, ParentAbsenceNote
 from db.models.homework import Homework, HomeworkSubmission
 from db.models.invite import Invite
 from db.models.audit import AuditLog
+from db.models.gamification import (
+    XPTransaction,
+    Streak,
+    Achievement,
+    UserAchievement,
+    VibeEntry,
+    TeacherPrivateNote,
+)
+from db.models.seating import DeskSeating
+from db.models.study import FlashcardSet, FlashcardItem, SkillNode, StudentSkill
+from db.models.file import DigitalBackpackFile
 
 __all__ = [
     "Base",
@@ -34,4 +45,16 @@ __all__ = [
     "HomeworkSubmission",
     "Invite",
     "AuditLog",
+    "XPTransaction",
+    "Streak",
+    "Achievement",
+    "UserAchievement",
+    "VibeEntry",
+    "TeacherPrivateNote",
+    "DeskSeating",
+    "FlashcardSet",
+    "FlashcardItem",
+    "SkillNode",
+    "StudentSkill",
+    "DigitalBackpackFile",
 ]

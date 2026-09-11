@@ -101,6 +101,22 @@ export const ParentView = {
           </div>
         </div>
 
+        <!-- Smart Weekly AI Summary Card -->
+        <div class="card" style="border-left:4px solid var(--color-primary);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <i data-lucide="sparkles" style="color:var(--color-primary);width:16px;height:16px;"></i>
+              <span style="font-weight:700;font-size:14px;">Умный недельный отчёт</span>
+            </div>
+            <button class="btn btn-subtle" id="loadWeeklySummaryBtn" style="padding:4px 10px;font-size:11px;">
+              Сформировать
+            </button>
+          </div>
+          <div id="weeklySummaryContent" style="font-size:13px;color:var(--text-secondary);line-height:1.5;">
+            Нажмите кнопку для формирования персональной сводки успеваемости и рекомендаций на эту неделю.
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <div class="card-title">
@@ -127,6 +143,28 @@ export const ParentView = {
       `;
 
       this.attachChildSelectorListener(container, this.renderOverview.bind(this));
+
+      container.querySelector('#loadWeeklySummaryBtn')?.addEventListener('click', async () => {
+        const contentDiv = container.querySelector('#weeklySummaryContent');
+        contentDiv.innerHTML = '<i data-lucide="loader-2" class="animate-spin" style="width:16px;height:16px;"></i> Формирую персональный отчёт...';
+        lucide.createIcons();
+        try {
+          triggerHaptic('selection');
+          const summary = await api.getParentWeeklySummary(this.activeChildId);
+          contentDiv.innerHTML = `
+            <div style="margin-bottom:8px;font-weight:700;color:var(--text-primary);">${escapeHtml(summary.summary_text)}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">
+              📊 Оценок за неделю: <strong>${summary.grades_count}</strong> (Средний: <strong>${summary.average_grade}</strong>)
+            </div>
+            <div style="font-size:12px;font-style:italic;background:var(--bg-subtle);padding:8px;border-radius:var(--radius-sm);">
+              💡 Рекомендация: ${escapeHtml(summary.parent_tips)}
+            </div>
+          `;
+          triggerHaptic('notification', 'success');
+        } catch (err) {
+          contentDiv.innerHTML = `<span style="color:var(--color-danger);">${escapeHtml(err.message)}</span>`;
+        }
+      });
     } catch (e) {
       container.innerHTML = `<div class="card"><p class="error-text">${escapeHtml(e.message)}</p></div>`;
     }

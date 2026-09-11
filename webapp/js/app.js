@@ -161,6 +161,7 @@ class LuminaApp {
       items = [
         { id: 'dashboard', label: i18n.t('nav.dashboard', 'Классы'), icon: 'layout-dashboard' },
         { id: 'journal', label: i18n.t('nav.journal', 'Журнал'), icon: 'clipboard-list' },
+        { id: 'seating', label: i18n.t('seating.title', 'Рассадка'), icon: 'grid' },
         { id: 'homework', label: i18n.t('nav.homework', 'ДЗ'), icon: 'file-text' },
         { id: 'profile', label: i18n.t('nav.profile', 'Профиль'), icon: 'user' },
       ];
@@ -216,6 +217,7 @@ class LuminaApp {
       switch (this.currentTab) {
         case 'dashboard': TeacherView.renderDashboard(this.container); break;
         case 'journal': TeacherView.renderJournal(this.container); break;
+        case 'seating': TeacherView.renderSeating(this.container); break;
         case 'homework': TeacherView.renderHomework(this.container); break;
         case 'profile': TeacherView.renderProfile(this.container); break;
         default: TeacherView.renderDashboard(this.container);

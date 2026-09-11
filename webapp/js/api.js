@@ -282,6 +282,84 @@ class ApiClient {
     }
     return this.request(`/admin/audit-logs${q}`);
   }
+
+  // ==================== Gamification & Vibe ====================
+  async getGamificationProfile() {
+    return this.request('/gamification/profile');
+  }
+
+  async submitVibe(vibeType, note = '') {
+    return this.request('/gamification/vibe', {
+      method: 'POST',
+      body: JSON.stringify({ vibe_type: vibeType, note, is_private: true }),
+    });
+  }
+
+  // ==================== Seating & Quick-Grading ====================
+  async getSeatingChart(classId) {
+    return this.request(`/seating/class/${encodeURIComponent(classId)}`);
+  }
+
+  async assignDesk(classId, rowNum, colNum, studentId, deskLabel = '') {
+    return this.request(`/seating/class/${encodeURIComponent(classId)}/desk`, {
+      method: 'POST',
+      body: JSON.stringify({ row_num: rowNum, col_num: colNum, student_id: studentId, desk_label: deskLabel }),
+    });
+  }
+
+  async pickRandomStudent(classId, excludeIds = []) {
+    return this.request(`/seating/class/${encodeURIComponent(classId)}/random`, {
+      method: 'POST',
+      body: JSON.stringify({ exclude_ids: excludeIds }),
+    });
+  }
+
+  async quickGrade(payload) {
+    return this.request('/teacher/quick-grade', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async undoGrade(gradeId) {
+    return this.request(`/teacher/undo-grade/${encodeURIComponent(gradeId)}`, {
+      method: 'POST',
+    });
+  }
+
+  // ==================== AI Study Assistant & Pre-test ====================
+  async getAiHint(subject, topic, question) {
+    return this.request('/ai/hint', {
+      method: 'POST',
+      body: JSON.stringify({ subject, topic, question }),
+    });
+  }
+
+  async getAiRecap(subject, gradeLevel = 8, topics = []) {
+    return this.request('/ai/recap', {
+      method: 'POST',
+      body: JSON.stringify({ subject, grade_level: gradeLevel, topics }),
+    });
+  }
+
+  async getParentWeeklySummary(studentId) {
+    return this.request(`/ai/parent-summary/${encodeURIComponent(studentId)}`);
+  }
+
+  // ==================== Digital Backpack & Flashcards ====================
+  async getBackpackFiles(subjectId = null) {
+    const q = subjectId ? `?subject_id=${encodeURIComponent(subjectId)}` : '';
+    return this.request(`/backpack/files${q}`);
+  }
+
+  async getFlashcards(subjectId = null) {
+    const q = subjectId ? `?subject_id=${encodeURIComponent(subjectId)}` : '';
+    return this.request(`/study/flashcards${q}`);
+  }
+
+  async getSkillTree(subjectId) {
+    return this.request(`/study/skills/${encodeURIComponent(subjectId)}`);
+  }
 }
 
 export const api = new ApiClient();

@@ -580,3 +580,49 @@ async def delete_teacher_homework(
     await db.delete(hw)
     await db.commit()
     return {"status": "deleted"}
+
+
+class QuickGradeRequest(BaseModel):
+    student_id: str
+    lesson_id: str
+    value: float
+    grade_type: str = "classwork"
+    comment: Optional[str] = None
+    tag: Optional[str] = None
+
+
+@router.post("/quick-grade")
+async def quick_grade_student(
+    payload: QuickGradeRequest,
+    current_user: User = Depends(require_roles(UserRole.TEACHER, UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Allows single-tap quick grading with 5-minute undo window."""
+    from api.services.grade_service import award_single_grade
+    return await award_single_grade(
+        db=db,
+        school_id=current_user.school_id,
+        teacher_id=current_user.id,
+        student_id=payload.student_id,
+        lesson_id=payload.lesson_id,
+        grade_value=payload.value,
+        grade_type_code=payload.grade_type,
+        comment=payload.comment,
+        tag=payload.tag,
+    )
+
+
+@router.post("/undo-grade/{grade_id}")
+async def undo_grade(
+    grade_id: str,
+    current_user: User = Depends(require_roles(UserRole.TEACHER, UserRole.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Allows undoing a recently awarded grade within 5 minutes."""
+    from api.services.grade_service import undo_grade_submission
+    return await undo_grade_submission(
+        db=db,
+        school_id=current_user.school_id,
+        teacher_id=current_user.id,
+        grade_id=grade_id,
+    )

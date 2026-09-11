@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from api.routers import admin, auth, bot_webhook, parent, shared, student, teacher
+from api.routers import admin, ai, auth, backpack, bot_webhook, gamification, parent, seating, shared, student, study, teacher
 from db.session import init_db
 from shared.config import settings
 
@@ -75,6 +75,11 @@ app.include_router(admin.router, prefix=api_v1_prefix)
 app.include_router(teacher.router, prefix=api_v1_prefix)
 app.include_router(student.router, prefix=api_v1_prefix)
 app.include_router(parent.router, prefix=api_v1_prefix)
+app.include_router(gamification.router, prefix=api_v1_prefix)
+app.include_router(seating.router, prefix=api_v1_prefix)
+app.include_router(study.router, prefix=api_v1_prefix)
+app.include_router(ai.router, prefix=api_v1_prefix)
+app.include_router(backpack.router, prefix=api_v1_prefix)
 app.include_router(bot_webhook.router, prefix=api_v1_prefix)
 
 # Mount static webapp
