@@ -1,6 +1,7 @@
 """Central typed configuration for Lumina Telegram School OS."""
 
 import logging
+import os
 from typing import List, Literal, Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -65,12 +66,19 @@ class Settings(BaseSettings):
         elif v.startswith("postgresql://") and "+asyncpg" not in v:
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-        # Enforce PostgreSQL in production
+        # Enforce PostgreSQL in production, unless running serverless demo on Vercel
         env = info.data.get("ENVIRONMENT")
         if env == "production" and "sqlite" in v:
-            raise ValueError(
-                "SQLite is strictly prohibited in production. Configure a PostgreSQL DATABASE_URL."
+            if not os.environ.get("VERCEL"):
+                raise ValueError(
+                    "SQLite is strictly prohibited in production. Configure a PostgreSQL DATABASE_URL."
+                )
+            logger.warning(
+                "Running SQLite on Vercel serverless. Database in /tmp is ephemeral. "
+                "For production persistence, configure PostgreSQL in DATABASE_URL."
             )
+            if "./lumina.db" in v:
+                v = "sqlite+aiosqlite:////tmp/lumina.db"
         return v
 
     @field_validator("JWT_SECRET_KEY")

@@ -19,13 +19,22 @@ logger = logging.getLogger("lumina.api")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan: initializes DB schema in development mode."""
-    if settings.ENVIRONMENT == "development":
+    """Application lifespan: initializes DB schema in development / serverless mode."""
+    if settings.ENVIRONMENT == "development" or ("sqlite" in settings.DATABASE_URL and "/tmp/" in settings.DATABASE_URL):
         try:
+            import shutil
+            from pathlib import Path
+            src = Path("./lumina.db")
+            dst = Path("/tmp/lumina.db")
+            if src.exists() and not dst.exists():
+                try:
+                    shutil.copy2(src, dst)
+                except Exception as e:
+                    logger.warning("Could not copy lumina.db to /tmp: %s", e)
             await init_db()
-            logger.info("Development database schema initialized.")
+            logger.info("Database schema initialized.")
         except Exception as exc:
-            logger.warning("init_db encountered an issue in development: %s", exc)
+            logger.warning("init_db encountered an issue: %s", exc)
     yield
 
 
