@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 
 from bot.config import BOT_TOKEN
-from bot.handlers import start_router
+from bot.handlers import start_router, commands_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("lumina.bot")
@@ -20,6 +20,7 @@ async def main():
 
     # Register handlers
     dp.include_router(start_router)
+    dp.include_router(commands_router)
 
     try:
         await dp.start_polling(bot)
